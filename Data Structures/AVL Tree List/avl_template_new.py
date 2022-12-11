@@ -213,6 +213,7 @@ class AVLTreeList(object):
 
     def __init__(self):
         self.root = self.virtual
+        self.maximumNode = self.root
 
 
     # add your fields here
@@ -275,13 +276,15 @@ class AVLTreeList(object):
             self.root.setHeight(0)
             self.root.setLeft(self.getVirtualNode())
             self.root.setRight(self.getVirtualNode())
+            self.maximumNode = self.root
             return 0
         z = AVLNode(val)
         z.setLeft(self.getVirtualNode())
         z.setRight(self.getVirtualNode())
         if i == self.length():
-            x = self.lastNode()
+            x = self.maximumNode
             x.setRight(z)
+            self.maximumNode = z
             return self.fix_and_rotate_right(x)
         else: # i < len(lst)
             x = self.select(i+1)
@@ -514,20 +517,26 @@ class AVLTreeList(object):
         self.fixSize(node)
         tmp_node = node
         cnt = 0
+        print(tmp_node.getBalanceFactor(),"at begging")
         while (tmp_node.getBalanceFactor() != 1 or tmp_node.getBalanceFactor() != -1):
+            print(tmp_node.getBalanceFactor(),"after first loop")
+            print("cnt", cnt)
             if tmp_node.getBalanceFactor() == 0:
                 break
-            if tmp_node.getBalanceFactor() == -2:
+            elif tmp_node.getBalanceFactor() == -2:
                 tmp_node.left_rotation()
                 cnt +=1
                 break
-            if tmp_node.getBalanceFactor() == 2:
+            elif tmp_node.getBalanceFactor() == 2:
                 tmp_node.left.left_rotation()
                 tmp_node.right_rotation()
                 cnt += 2
                 break
-            tmp_node = tmp_node.parent
-        self.updateParentsHeight()
+            elif tmp_node.parent != None:
+                tmp_node = tmp_node.parent
+            else:
+                break
+        self.updateParentsHeight(node)
         return cnt
 
 
@@ -549,7 +558,7 @@ class AVLTreeList(object):
                 cnt += 2
                 break
             tmp_node = tmp_node.parent
-        self.updateParentsHeight()
+        self.updateParentsHeight(node)
         return cnt
 
 
@@ -597,9 +606,10 @@ class AVLTreeList(object):
     def updateParentsHeight(self,node):
         node1 = node
         while (node1 != None):
-            tmp_Height = node1.setRealHeight()
+            tmp_Height = node1.getHeight()
             if node1.height == tmp_Height:
                 break
             node1.height = tmp_Height
             node1.balanceFactor = node1.getBalanceFactor()
             node1 = node1.parent
+
