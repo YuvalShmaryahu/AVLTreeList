@@ -85,7 +85,6 @@ class AVLNode(object):
     """
 
     def setLeft(self, node):
-        node.parent = self
         self.left = node
 
 
@@ -97,7 +96,6 @@ class AVLNode(object):
     """
 
     def setRight(self, node):
-        node.parent = self
         self.right = node
 
     """sets parent
@@ -128,11 +126,18 @@ class AVLNode(object):
         self.height = h
         return None
 
-    """returns whether self is not a virtual node 
 
-    @rtype: bool
-    @returns: False if self is a virtual node, True otherwise.
-    """
+
+
+
+    """Sets the size of a node in O(1)
+            @type size: int
+            @param size: The size
+            """
+    def setSize(self, size):
+
+        self.size = size
+
 
     def min(self):
         node = self
@@ -202,9 +207,13 @@ class AVLTreeList(object):
     Constructor, you are allowed to add more fields.  
 
     """
+    virtual = AVLNode(None)
+    virtual.setSize(0)
+    virtual.setHeight(-1)
 
     def __init__(self):
-        self.root = AVLNode()
+        self.root = self.virtual
+
 
     # add your fields here
 
@@ -229,7 +238,7 @@ class AVLTreeList(object):
     """
 
     def empty(self):
-        return self.root == None or self.root.value == None
+        return self.root.value == None
 
     """retrieves the value of the i'th item in the list
 
@@ -239,6 +248,10 @@ class AVLTreeList(object):
     @rtype: str
     @returns: the the value of the i'th item in the list
     """
+
+    def getVirtualNode(self):
+
+        return self.virtual
 
     def retrieve(self, i):
         val = self.select(i + 1).value
@@ -257,13 +270,19 @@ class AVLTreeList(object):
 
     def insert(self, i, val):
         if(self.empty()):
-            self.root.setValue(val)
+            self.root = AVLNode(val)
+            self.root.setSize(1)
+            self.root.setHeight(0)
+            self.root.setLeft(self.getVirtualNode())
+            self.root.setRight(self.getVirtualNode())
             return 0
         z = AVLNode(val)
+        z.setLeft(self.getVirtualNode())
+        z.setRight(self.getVirtualNode())
         if i == self.length():
-            x = self.last()
-            x.setright(z)
-            return self.fix_and_rotate_right()
+            x = self.lastNode()
+            x.setRight(z)
+            return self.fix_and_rotate_right(x)
         else: # i < len(lst)
             x = self.select(i+1)
             if x.left.val == None:
@@ -347,10 +366,33 @@ class AVLTreeList(object):
         node = self.root
         if self.empty():
             return None
-        while node.right.value is not None:
+        while node.right.value != None:
             node = node.right
         return node.value
 
+    def lastNode(self):
+        node = self.root
+        if self.empty():
+            return None
+        elif node.right == None:
+            return node
+        else:
+            while node.right.value != None:
+                node = node.right
+
+            return node
+
+    def firstNode(self):
+        node = self.root
+        if self.empty():
+            return None
+        elif node.left == None:
+            return node
+        else:
+            while node.left.value != None:
+                node = node.left
+
+            return node
     """returns an array representing list 
 
     @rtype: list
@@ -472,14 +514,14 @@ class AVLTreeList(object):
         self.fixSize(node)
         tmp_node = node
         cnt = 0
-        while (tmp_node.balanceFactor != 1 or tmp_node.balanceFactor != -1):
-            if tmp_node.balanceFactor == 0:
+        while (tmp_node.getBalanceFactor() != 1 or tmp_node.getBalanceFactor() != -1):
+            if tmp_node.getBalanceFactor() == 0:
                 break
-            if tmp_node.balanceFactor == -2:
+            if tmp_node.getBalanceFactor() == -2:
                 tmp_node.left_rotation()
                 cnt +=1
                 break
-            if tmp_node.balanceFactor == 2:
+            if tmp_node.getBalanceFactor() == 2:
                 tmp_node.left.left_rotation()
                 tmp_node.right_rotation()
                 cnt += 2
@@ -494,14 +536,14 @@ class AVLTreeList(object):
         self.fixSize(node)
         tmp_node = node
         cnt = 0
-        while (tmp_node.balanceFactor != 1 or tmp_node.balanceFactor != -1):
-            if tmp_node.balanceFactor == 0:
+        while (tmp_node.getBalanceFactor != 1 or tmp_node.getBalanceFactor != -1):
+            if tmp_node.getBalanceFactor == 0:
                 break
-            if tmp_node.balanceFactor == 2:
+            if tmp_node.getBalanceFactor == 2:
                 tmp_node.right_rotation()
                 cnt += 1
                 break
-            if tmp_node.balanceFactor == -2:
+            if tmp_node.getBalanceFactor == -2:
                 tmp_node.right.right_rotation()
                 tmp_node.left_rotation()
                 cnt += 2
