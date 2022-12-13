@@ -4,7 +4,7 @@
 # id2      - complete info
 # name2    - complete info
 
-
+import random
 """A class represnting a node in an AVL tree"""
 
 
@@ -432,7 +432,11 @@ class AVLTreeList(object):
     """
 
     def sort(self):
-        return None
+        tree = AVLTreeList()
+        array = self.listToArray()
+        for i in range (self.root.size):
+            tree.insert(i,array[i])
+        return tree
 
     """permute the info values of the list 
 
@@ -441,7 +445,12 @@ class AVLTreeList(object):
     """
 
     def permutation(self):
-        return None
+        tree = AVLTreeList()
+        array = self.listToArray()
+        random.shuffle(array)
+        for i in range(self.root.size):
+            tree.insert(i, array[i])
+        return tree
 
     """concatenates lst to self
 
@@ -498,7 +507,18 @@ class AVLTreeList(object):
 
 
     def search(self, val):
-        return None
+        if self.empty() == True:
+            return -1
+        node = self.root
+        while (node.left.value != None):
+            node = node.left
+        if node.value == val:
+            return 0
+        for i in range (self.root.size -1):
+            node = node.getSuccessor()
+            if node.value == val:
+                return i + 1
+        return -1
 
     """returns the root of the tree representing the list
 
