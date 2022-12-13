@@ -146,7 +146,7 @@ class AVLNode(object):
             return None
         while (node.left.value != None):
             node = node.left
-        return node.value
+        return node
 
     def max(self):
         node = self
@@ -154,11 +154,11 @@ class AVLNode(object):
             return None
         while (node.right.value != None):
             node = node.right
-        return node.value
+        return node
 
     def getPredecessor(self):
         if self.left.value is not None:
-            return max(self.left)
+            return self.left.max()
         node = self
         y = node.parent
         while (y is not None and x == y.left):
@@ -168,7 +168,7 @@ class AVLNode(object):
 
     def getSuccessor(self):
         if self.right.value is not None:
-            return min(self.right)
+            return self.right.min()
         node = self
         y = node.parent
         while (y is not None and x == y.right):
@@ -180,10 +180,14 @@ class AVLNode(object):
     def isRealNode(self):
         if self.value == None:
             return False
+        if self.height == None:
+            return False
         return True
 
     def getBalanceFactor(self):
-        return (self.left.height - self.right.height)
+        n = (self.left.height - self.right.height)
+        return n
+
 
     # Updating the height of a node
     def setRealHeight(self):
@@ -225,12 +229,12 @@ class AVLTreeList(object):
         return self.Tree_select_rec(self.root, i)
 
     def Tree_select_rec(self, node, i):
-        r = node.left.size + 1
-        if i == r:
+        leftTreeSize = node.left.size + 1
+        if i == leftTreeSize:
             return node
-        if (i < r):
+        if (i < leftTreeSize):
             return self.Tree_select_rec(node.left, i)
-        return self.Tree_select_rec(node.right, i - r)
+        return self.Tree_select_rec(node.right, i - leftTreeSize)
 
     ### to here
     """returns whether the list is empty
@@ -289,12 +293,12 @@ class AVLTreeList(object):
             return self.fix_and_rotate_right(z)
         else: # i < len(lst)
             x = self.select(i+1)
-            if x.left.val == None:
-                x.setleft(z)
+            if x.left.isRealNode() == False:
+                x.setLeft(z)
                 return self.fix_and_rotate_left(z)
             else: #x has left child
-                y = x.predecessor
-                y.setright(z)
+                y = x.getPredecessor()
+                y.setRight(z)
                 return self.fix_and_rotate_right(z)
 
 
@@ -508,7 +512,7 @@ class AVLTreeList(object):
         return self.root
 
     def fixSize(self,node):
-        tmp_node = node
+        tmp_node = node.parent
         while (tmp_node != None):
             tmp_node.size += 1
             tmp_node = tmp_node.parent
@@ -518,27 +522,22 @@ class AVLTreeList(object):
             return 0
         self.updateParentsHeight(node)
         self.fixSize(node)
-        tmp_node = node
+        tmp_node = node.parent
         cnt = 0
-        print(tmp_node.getBalanceFactor(),"at begging")
-        while (tmp_node.getBalanceFactor() != 1 or tmp_node.getBalanceFactor() != -1):
-            print(tmp_node.getBalanceFactor(),"after first loop")
-            print("cnt", cnt)
-            if tmp_node.getBalanceFactor() == 0:
-                break
-            elif tmp_node.getBalanceFactor() == -2:
-                tmp_node.left_rotation()
-                cnt +=1
-                break
-            elif tmp_node.getBalanceFactor() == 2:
-                tmp_node.left.left_rotation()
-                tmp_node.right_rotation()
-                cnt += 2
-                break
-            elif tmp_node.parent != None:
-                tmp_node = tmp_node.parent
-            else:
-                break
+        while tmp_node != None:
+            if (tmp_node.getBalanceFactor() != 1 and tmp_node.getBalanceFactor() != -1):
+                if tmp_node.getBalanceFactor() == 0:
+                    break
+                elif tmp_node.getBalanceFactor() == -2:
+                    self.left_rotation(tmp_node)
+                    cnt +=1
+                    break
+                elif tmp_node.getBalanceFactor() == 2:
+                    self.left_rotation(tmp_node.left)
+                    self.right_rotation(tmp_node)
+                    cnt += 2
+                    break
+            tmp_node = tmp_node.parent
         return cnt
 
 
@@ -547,20 +546,21 @@ class AVLTreeList(object):
             return 0
         self.updateParentsHeight(node)
         self.fixSize(node)
-        tmp_node = node
+        tmp_node = node.parent
         cnt = 0
-        while (tmp_node.getBalanceFactor != 1 or tmp_node.getBalanceFactor != -1):
-            if tmp_node.getBalanceFactor == 0:
-                break
-            if tmp_node.getBalanceFactor == 2:
-                tmp_node.right_rotation()
-                cnt += 1
-                break
-            if tmp_node.getBalanceFactor == -2:
-                tmp_node.right.right_rotation()
-                tmp_node.left_rotation()
-                cnt += 2
-                break
+        while tmp_node != None:
+            if(tmp_node.getBalanceFactor() != 1 and tmp_node.getBalanceFactor() != -1):
+                if tmp_node.getBalanceFactor() == 0:
+                    break
+                if tmp_node.getBalanceFactor() == 2:
+                    self.right_rotation(tmp_node)
+                    cnt += 1
+                    break
+                if tmp_node.getBalanceFactor() == -2:
+                    self.right_rotation(tmp_node.right)
+                    self.left_rotation(tmp_node)
+                    cnt += 2
+                    break
             tmp_node = tmp_node.parent
         return cnt
 
@@ -570,30 +570,37 @@ class AVLTreeList(object):
         B = node
         A = node.left
         Size_B = B.size
-        C = B.parent
-        BOOL = False  # if bool == True then B is the left child of its parent, else it is the right child
+        BOOLroot = (self.root == B)
+        if BOOLroot == False:
+            C = B.parent
+        BOOLleftright = False  # if bool == True then B is the left child of its parent, else it is the right child
         if (C.left == B):
-            BOOL = True
+            BOOLleftright = True
         B.left = A.right
         B.left.parent = B
         A.right = B
         A.parent = B.parent
-        if BOOL == True:
+        if BOOLleftright == True:
             A.parent.left = A
         else:  # Bool is false
-            A.parent.right = A
-        B.parent = A
+            if BOOLroot == False:
+                A.parent.right = A
+        B.setParent(A)
         A.size = Size_B
         B.size = B.left.size + B.right.size + 1
+        if BOOLroot:
+            self.setRoot(A)
 
     def left_rotation(self,node):
         B = node
         A = node.right
         Size_B = B.size
+        BOOLroot = (self.root == B)
         C = B.parent
-        BOOL = False  # if bool == True then B is the right child of its parent, else it is the left child
-        if C.right == B:
-            BOOL = True
+        BOOL = False # if bool == True then B is the right child of its parent, else it is the left child
+        if BOOLroot == False:
+            if C.right == B:
+                BOOL = True
         B.right = A.left
         B.right.parent = B
         A.left = B
@@ -601,20 +608,25 @@ class AVLTreeList(object):
         if BOOL == True:
             A.parent.right = A
         else:  # Bool is false
-            A.parent.left = A
-        B.parent = A
+            if BOOLroot == False:
+                 A.parent.left = A
+        B.setParent(A)
         A.size = Size_B
         B.size = B.left.size + B.right.size + 1
+        if BOOLroot:
+            self.setRoot(A)
 
     def updateParentsHeight(self,node):
         parent = node.parent
         while (parent != None):
-            if (parent.getBalanceFactor == 0):
+            if (parent.getBalanceFactor() == 0):
                 break;
             else:
                 parent.height += 1
                 parent = parent.parent
 
+    def setRoot(self,node):
+        self.root = node
 
 
 
