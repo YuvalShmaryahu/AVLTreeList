@@ -3,7 +3,7 @@
 # name1    - complete info
 # id2      - complete info
 # name2    - complete info
-
+import printree
 import random
 """A class represnting a node in an AVL tree"""
 
@@ -22,8 +22,12 @@ class AVLNode(object):
         self.parent = None
         self.size = 1
         self.height = 0
-        self.balanaceFactor = 0
 
+    def __repr__(self):
+        if self.isRealNode():
+            return self.value
+        else:
+            return "virt"
 
     """returns the left child
     @rtype: AVLNode
@@ -32,8 +36,7 @@ class AVLNode(object):
 
     # O(1)
     def getLeft(self):
-        if self.left.value == None:
-            return None
+
         return self.left
 
     """returns the right child
@@ -44,8 +47,7 @@ class AVLNode(object):
 
     # O(1)
     def getRight(self):
-        if self.right.value == None:
-            return None
+
         return self.right
 
     """returns the parent 
@@ -86,7 +88,7 @@ class AVLNode(object):
 
     def setLeft(self, node):
         self.left = node
-        node.parent = self
+
 
 
 
@@ -98,7 +100,7 @@ class AVLNode(object):
 
     def setRight(self, node):
         self.right = node
-        node.parent = self
+
 
     """sets parent
 
@@ -178,11 +180,10 @@ class AVLNode(object):
 
     # O(1)
     def isRealNode(self):
-        if self.value == None:
+        if self.getHeight() != -1:
+            return True
+        else:
             return False
-        if self.height == None:
-            return False
-        return True
 
     def getBalanceFactor(self):
         n = (self.left.height - self.right.height)
@@ -209,8 +210,7 @@ A class implementing the ADT list, using an AVL tree.
 
 class AVLTreeList(object):
     """
-    Constructor, you are allowed to add more fields.  
-
+    Constructor, you are allowed to add more fields.
     """
     virtual = AVLNode(None)
     virtual.setSize(0)
@@ -220,11 +220,18 @@ class AVLTreeList(object):
         self.root = self.virtual
         self.maximumNode = self.root
 
-
+    def __repr__(self):
+        """Representation of the tree
+        @returns: Prints tree to console using printree
+        function from Extended Introduction to CS course
+        """
+        out = ""
+        for row in printree.printree(self):
+            out = out + row + "\n"
+        return out
     # add your fields here
 
-    ###    Yuval added from here
-    ##return the rank of a node
+    ##return a node by its rank
     def select(self, i):
         return self.Tree_select_rec(self.root, i)
 
@@ -236,7 +243,6 @@ class AVLTreeList(object):
             return self.Tree_select_rec(node.left, i)
         return self.Tree_select_rec(node.right, i - leftTreeSize)
 
-    ### to here
     """returns whether the list is empty
 
     @rtype: bool
@@ -254,7 +260,12 @@ class AVLTreeList(object):
     @rtype: str
     @returns: the the value of the i'th item in the list
     """
-
+    def getTreeRoot(self):
+        """Returns the root of the tree in O(1)
+        @rtype: AVLNode
+        @returns: The root
+        """
+        return self.root
     def getVirtualNode(self):
 
         return self.virtual
@@ -289,16 +300,19 @@ class AVLTreeList(object):
         if i == self.length():
             x = self.maximumNode
             x.setRight(z)
+            z.setParent(x)
             self.maximumNode = z
             return self.fix_and_rotate_right(z)
         else: # i < len(lst)
             x = self.select(i+1)
             if x.left.isRealNode() == False:
                 x.setLeft(z)
+                z.setParent(x)
                 return self.fix_and_rotate_left(z)
             else: #x has left child
                 y = x.getPredecessor()
                 y.setRight(z)
+                z.setParent(y)
                 return self.fix_and_rotate_right(z)
 
 
@@ -336,7 +350,7 @@ class AVLTreeList(object):
         while a.value != None:
             bf = a.getBalanceFactor()
             if 2 > bf > -2:
-                now_h = a.Height
+                now_h = a.height
                 if now_h == prv_h:
                     return 0
                 else:
@@ -591,23 +605,24 @@ class AVLTreeList(object):
         A = node.left
         Size_B = B.size
         BOOLroot = (self.root == B)
-        if BOOLroot == False:
-            C = B.parent
+        C = B.parent
         BOOLleftright = False  # if bool == True then B is the left child of its parent, else it is the right child
-        if (C.left == B):
-            BOOLleftright = True
-        B.left = A.right
-        B.left.parent = B
-        A.right = B
-        A.parent = B.parent
+        if BOOLroot == False:
+            if (C.left == B):
+                BOOLleftright = True
+        B.setLeft(A.right)
+        B.left.setParent(B)
+        A.setParent(C)
+        A.setRight(B)
         if BOOLleftright == True:
-            A.parent.left = A
+            A.parent.setLeft(A)
         else:  # Bool is false
             if BOOLroot == False:
-                A.parent.right = A
+                A.parent.setRight(A)
         B.setParent(A)
         A.size = Size_B
-        B.size = B.left.size + B.right.size + 1
+        A.setSize(Size_B)
+        B.setSize(B.left.size + B.right.size + 1)
         if BOOLroot:
             self.setRoot(A)
 
@@ -617,22 +632,22 @@ class AVLTreeList(object):
         Size_B = B.size
         BOOLroot = (self.root == B)
         C = B.parent
-        BOOL = False # if bool == True then B is the right child of its parent, else it is the left child
+        BOOLleftright = False # if bool == True then B is the right child of its parent, else it is the left child
         if BOOLroot == False:
             if C.right == B:
-                BOOL = True
-        B.right = A.left
-        B.right.parent = B
-        A.left = B
-        A.parent = B.parent
-        if BOOL == True:
-            A.parent.right = A
+                BOOLleftright = True
+        B.setRight(A.left)
+        B.right.setParent(B)
+        A.setParent(C)
+        A.setLeft(B)
+        if BOOLleftright == True:
+            A.parent.setRight(A)
         else:  # Bool is false
-            if BOOLroot == False:
-                 A.parent.left = A
+           if BOOLroot == False:
+              A.parent.setLeft(A)
         B.setParent(A)
-        A.size = Size_B
-        B.size = B.left.size + B.right.size + 1
+        A.setSize(Size_B)
+        B.setSize(B.left.size + B.right.size + 1)
         if BOOLroot:
             self.setRoot(A)
 
