@@ -186,8 +186,7 @@ class AVLNode(object):
             return False
 
     def getBalanceFactor(self):
-        n = (self.left.height - self.right.height)
-        return n
+        return self.left.getHeight() - self.right.getHeight()
 
 
     # Updating the height of a node
@@ -327,27 +326,50 @@ class AVLTreeList(object):
     """
 
     def delete(self, i):
-        x = self.select( i)
-        a = x.parent
-        prv_h = a.height
+        x = self.select(i+1)
+        if x.getParent() != None: #incase we delete the root we have a little spacial treatment
+            a = x.getParent()
+            #prv_h = a.getHeight()
         #Deleting like BST tree
-        if x.left.value == None and x.right.value == None: #x has no children
-            x.setValue(None)
-        elif x.left.value != None and x.right.value == None:
+        if x.left.isRealNode() == False and x.right.isRealNode() == False: #x has no children (only virtual)
+            if self.getRoot() == x:
+                if x.left.isRealNode() == False and x.right.isRealNode() == False:
+                    self.setRoot(self.getVirtualNode())
+                    return 0
+            if a.getRight() == x:
+                a.setRight(self.getVirtualNode())
+                self.fixSizeDelete(x)
+            else:
+                a.setLeft(self.getVirtualNode())
+                self.fixSizeDelete(x)
+        elif x.left.isRealNode() and x.right.isRealNode() == False: # x has only left child
             x.setValue(x.left.value)
-            x.left.setValue(None)
-        elif x.right.value != None and x.left.value == None:
+            x.setLeft(self.getVirtualNode())
+            self.fixSizeDelete(x)
+        elif x.right.isRealNode() and x.left.isRealNode() == False: #x has only right child
             x.setValue(x.right.value)
-            x.right.setValue(None)
-        else:
+            x.setRight(self.getVirtualNode())
+            self.fixSizeDelete(x)
+        else: # x has two children
             y = x.getSuccessor()
+            p = y.getParent()
             x.setValue(y.value)
-            y.setValue(y.right.value)
-            y.right.setValue(None)
-        self.updateParentsHeight(a)
+            if y.right.isRealNode():
+                y.setValue(y.right.getValue())
+                y.setRight(self.getVirtualNode())
+            else:
+                y.parent.setLeft(self.getVirtualNode())
+            if x.getParent() != None:
+                self.fixSizeDelete(a)
+            else:
+                self.fixSizeDelete(p)
+        if x.getParent() != None:
+            self.updateParentsHeightDelete(a)
+        else:
+            self.updateParentsHeightDelete(p)
         #AVL rebalancing
         cntRotations = 0
-        while a.value != None:
+        while a != None:
             bf = a.getBalanceFactor()
             if 2 > bf > -2:
                 now_h = a.height
@@ -361,6 +383,7 @@ class AVLTreeList(object):
             else: #bf = -2
                 cntRotations += self.fix_and_rotate_left(a)
                 a = a.parent
+        return cntRotations
 
 
 
@@ -551,6 +574,11 @@ class AVLTreeList(object):
             tmp_node.size += 1
             tmp_node = tmp_node.parent
 
+    def fixSizeDelete(self, node):
+        tmp_node = node
+        while (tmp_node != None):
+            tmp_node.size -= 1
+            tmp_node = tmp_node.parent
     def fix_and_rotate_right(self, node):
         if node == None:
             return 0
@@ -659,6 +687,14 @@ class AVLTreeList(object):
             else:
                 parent.height += 1
                 parent = parent.parent
+
+    def updateParentsHeightDelete(self,node):
+        maxSubHeight = node.right.getHeight()
+        if node.left.getHeight() > maxSubHeight:
+            maxSubHeight = node.left.getHeight()
+        node.setHeight(maxSubHeight)
+
+
 
     def setRoot(self,node):
         self.root = node
