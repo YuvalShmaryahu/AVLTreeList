@@ -297,7 +297,7 @@ class AVLTreeList(object):
         z.setLeft(self.getVirtualNode())
         z.setRight(self.getVirtualNode())
         if i == self.length():
-            x = self.maximumNode
+            x = self.lastNode()
             x.setRight(z)
             z.setParent(x)
             self.maximumNode = z
