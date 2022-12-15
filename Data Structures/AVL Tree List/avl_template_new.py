@@ -321,62 +321,77 @@ class AVLTreeList(object):
 
     def delete(self, i):
         x = self.select(i+1)
-        if x.getParent() != None: #incase we delete the root we have a little spacial treatment
-            a = x.getParent()
-            #prv_h = a.getHeight()
         #Deleting like BST tree
         if x.left.isRealNode() == False and x.right.isRealNode() == False: #x has no children (only virtual)
             if self.getRoot() == x:
-                if x.left.isRealNode() == False and x.right.isRealNode() == False:
-                    self.setRoot(self.getVirtualNode())
-                    return 0
+                self.setRoot(self.getVirtualNode())
+                return 0
+            a = x.getParent()
             if a.getRight() == x:
                 a.setRight(self.getVirtualNode())
-                self.fixSizeDelete(x)
+                self.fixSizeDelete(a)
+                self.updateParentsHeightDelete(a)
             else:
                 a.setLeft(self.getVirtualNode())
-                self.fixSizeDelete(x)
+                self.fixSizeDelete(a)
+                self.updateParentsHeightDelete(a)
         elif x.left.isRealNode() and x.right.isRealNode() == False: # x has only left child
-            x.setValue(x.left.value)
+            x.setValue(x.getLeft().getValue())
             x.setLeft(self.getVirtualNode())
             self.fixSizeDelete(x)
+            self.updateParentsHeightDelete(x)
+            a=x
         elif x.right.isRealNode() and x.left.isRealNode() == False: #x has only right child
             x.setValue(x.right.value)
             x.setRight(self.getVirtualNode())
             self.fixSizeDelete(x)
+            self.updateParentsHeightDelete(x)
+            a=x
         else: # x has two children
             y = x.getSuccessor()
             p = y.getParent()
-            x.setValue(y.value)
+            x.setValue(y.getValue())
             if y.right.isRealNode():
-                y.setValue(y.right.getValue())
+                y.setValue(y.getRight().getValue())
                 y.setRight(self.getVirtualNode())
+                self.fixSizeDelete(y)
+                self.updateParentsHeightDelete(y)
+                a=y
             else:
-                y.parent.setLeft(self.getVirtualNode())
-            if x.getParent() != None:
-                self.fixSizeDelete(a)
-            else:
+                if (y.getParent().getLeft() == y):
+                    y.getParent().setLeft(self.getVirtualNode())
+                else:
+                    y.getParent().setRight(self.getVirtualNode())
                 self.fixSizeDelete(p)
-        if x.getParent() != None:
-            self.updateParentsHeightDelete(a)
-        else:
-            self.updateParentsHeightDelete(p)
+                self.updateParentsHeightDelete(p)
+                a=p
         #AVL rebalancing
         cntRotations = 0
         while a != None:
+            c = a.getParent()
+            a.setHeight(max(a.left.getHeight(),a.right.getHeight()) + 1)
             bf = a.getBalanceFactor()
-            if 2 > bf > -2:
-                now_h = a.height
-                if now_h == prv_h:
-                    return 0
+            if (bf == 1 or bf == -1) and a.getParent()==None:
+                return cntRotations
+            if bf == 2:
+                c = a.getParent()
+                if a.getLeft().getBalanceFactor() == 1 or a.getLeft().getBalanceFactor() ==0:
+                    cntRotations += 1
+                    self.right_rotation(a)
                 else:
-                    a = a.parent
-            elif bf == 2:
-                cntRotations += self.fix_and_rotate_right(a)
-                a = a.parent
-            else: #bf = -2
-                cntRotations += self.fix_and_rotate_left(a)
-                a = a.parent
+                    cntRotations += 2
+                    self.left_rotation(a.getLeft())
+                    self.right_rotation(a)
+            elif bf == -2: #bf = -2
+                if a.getRight().getBalanceFactor() == -1 or a.getRight().getBalanceFactor() == 0:
+                    cntRotations += 1
+                    self.left_rotation(a)
+                else:
+                    cntRotations += 2
+                    self.right_rotation(a.getRight())
+                    self.left_rotation(a)
+            a = c
+        print(self)
         return cntRotations
 
 
@@ -390,8 +405,7 @@ class AVLTreeList(object):
     def first(self):
         if self.empty():
             return None
-        minNode = self.min()
-        return minNode.getValue()
+        return self.firstNode().getValue()
 
     """returns the value of the last item in the list
 
@@ -402,8 +416,7 @@ class AVLTreeList(object):
     def last(self):
         if self.empty():
             return None
-        maxNode = self.max()
-        return maxNode.getValue()
+        return self.lastNode().getValue()
 
     def lastNode(self):
         node = self.root
@@ -414,7 +427,6 @@ class AVLTreeList(object):
         else:
             while node.right.value != None:
                 node = node.right
-
             return node
 
     def firstNode(self):
@@ -426,7 +438,6 @@ class AVLTreeList(object):
         else:
             while node.left.value != None:
                 node = node.left
-
             return node
     """returns an array representing list 
 
@@ -440,7 +451,7 @@ class AVLTreeList(object):
         node = self.root.min()
         for i in range(self.root.size):
             array[i] = node.value
-            node = node.getSuccessor
+            node = node.getSuccessor()
         return array
 
     """returns the size of the list 
@@ -567,8 +578,9 @@ class AVLTreeList(object):
     def fixSizeDelete(self, node):
         tmp_node = node
         while (tmp_node != None):
-            tmp_node.size -= 1
-            tmp_node = tmp_node.parent
+            prv_size = tmp_node.getSize()
+            tmp_node.setSize(prv_size-1)
+            tmp_node = tmp_node.getParent()
     def fix_and_rotate(self, node):
         if node == None:
             return 0
@@ -580,18 +592,18 @@ class AVLTreeList(object):
             if (node.getBalanceFactor() < -1):# BF is -2 We should run a left rotation
                 #Now if BF of right child is 1 we should have right rotation on the right child
                 #and then left rotation on the node
-                print(self)
-                print(node, node.getBalanceFactor())
+                #print(self)
+                #print(node, node.getBalanceFactor())
                 if node.getRight().getBalanceFactor() == 1:
 
                     #right rotation on child
 
-                    print("rotate right than left")
+                    #print("rotate right than left")
                     node.setRight(self.right_rotation(node.getRight()))
                     # we set the right child of node to be the root of the subtree after rotation
                     cnt += 1
                 #left rotation
-                print("rotate left")
+                #print("rotate left")
                 self.left_rotation(node)
                 cnt += 1
                 self.fixSize(node.parent)
@@ -602,17 +614,17 @@ class AVLTreeList(object):
 
                 # Now if BF of right child is -1 we should have left rotation on the left child
                 # and then right rotation on the node
-                print(self)
-                print(node, node.getBalanceFactor())
+             #   print(self)
+              #  print(node, node.getBalanceFactor())
                 if node.getLeft().getBalanceFactor() == -1:
                     indictor = True
                     # left rotation on child
-                    print("rotate left than right")
+                  #  print("rotate left than right")
                     node.setLeft(self.left_rotation(node.getLeft()))
                     # we set the Left child of node to be the root of the subtree after rotation
                     cnt += 1
                 # right rotation
-                print("rotate right")
+            #    print("rotate right")
                 self.right_rotation(node)
                 cnt += 1
                 self.fixSize(node.parent)
@@ -673,7 +685,6 @@ class AVLTreeList(object):
         A.setHeight(max(A.left.getHeight(), A.right.getHeight()) + 1)
         if isRoot:
             self.setRoot(A)
-        print(self)
         return A #The root of the rotated subtree
 
 
@@ -691,7 +702,7 @@ class AVLTreeList(object):
         maxSubHeight = node.right.getHeight()
         if node.left.getHeight() > maxSubHeight:
             maxSubHeight = node.left.getHeight()
-        node.setHeight(maxSubHeight)
+        node.setHeight(maxSubHeight +1)
 
 
 
