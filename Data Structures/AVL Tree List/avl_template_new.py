@@ -128,7 +128,6 @@ class AVLNode(object):
 
     def setHeight(self, h):
         self.height = h
-        return None
 
 
 
@@ -141,19 +140,18 @@ class AVLNode(object):
     def setSize(self, size):
         self.size = size
 
+    def getSize(self):
+        return self.size
+
 
     def min(self):
         node = self
-        if node.value is None:
-            return None
         while (node.left.value != None):
             node = node.left
         return node
 
     def max(self):
         node = self
-        if node.value is None:
-            return None
         while (node.right.value != None):
             node = node.right
         return node
@@ -217,7 +215,6 @@ class AVLTreeList(object):
 
     def __init__(self):
         self.root = self.virtual
-        self.maximumNode = self.root
 
     def __repr__(self):
         """Representation of the tree
@@ -291,7 +288,6 @@ class AVLTreeList(object):
             self.root.setHeight(0)
             self.root.setLeft(self.getVirtualNode())
             self.root.setRight(self.getVirtualNode())
-            self.maximumNode = self.root
             return 0
         z = AVLNode(val)
         z.setLeft(self.getVirtualNode())
@@ -300,19 +296,17 @@ class AVLTreeList(object):
             x = self.lastNode()
             x.setRight(z)
             z.setParent(x)
-            self.maximumNode = z
-            return self.fix_and_rotate_right(z)
         else: # i < len(lst)
             x = self.select(i+1)
             if x.left.isRealNode() == False:
                 x.setLeft(z)
                 z.setParent(x)
-                return self.fix_and_rotate_left(z)
             else: #x has left child
                 y = x.getPredecessor()
                 y.setRight(z)
                 z.setParent(y)
-                return self.fix_and_rotate_right(z)
+                return self.fix_and_rotate(y)
+        return self.fix_and_rotate(x)
 
 
 
@@ -394,12 +388,10 @@ class AVLTreeList(object):
     """
 
     def first(self):
-        node = self.root
         if self.empty():
             return None
-        while node.left.value is not None:
-            node = node.left
-        return node.value
+        minNode = self.min()
+        return minNode.getValue()
 
     """returns the value of the last item in the list
 
@@ -408,12 +400,10 @@ class AVLTreeList(object):
     """
 
     def last(self):
-        node = self.root
         if self.empty():
             return None
-        while node.right.value != None:
-            node = node.right
-        return node.value
+        maxNode = self.max()
+        return maxNode.getValue()
 
     def lastNode(self):
         node = self.root
@@ -579,105 +569,114 @@ class AVLTreeList(object):
         while (tmp_node != None):
             tmp_node.size -= 1
             tmp_node = tmp_node.parent
-    def fix_and_rotate_right(self, node):
+    def fix_and_rotate(self, node):
         if node == None:
             return 0
-        self.updateParentsHeight(node)
-        self.fixSize(node)
-        tmp_node = node.parent
-        cnt = 0
-        while tmp_node != None:
-            if (tmp_node.getBalanceFactor() != 1 and tmp_node.getBalanceFactor() != -1):
-                if tmp_node.getBalanceFactor() == 0:
-                    break
-                elif tmp_node.getBalanceFactor() == -2:
-                    self.left_rotation(tmp_node)
-                    cnt +=1
-                    break
-                elif tmp_node.getBalanceFactor() == 2:
-                    self.left_rotation(tmp_node.left)
-                    self.right_rotation(tmp_node)
-                    cnt += 2
-                    break
-            tmp_node = tmp_node.parent
-        return cnt
+        while node != None:
+            # update size and height of node
+            node.setSize(1 + node.getLeft().getSize() + node.getRight().getSize())
+            node.setHeight(1 + max(node.getLeft().getHeight(), node.getRight().getHeight()))
+            cnt = 0  # counting rotates
+            if (node.getBalanceFactor() < -1):# BF is -2 We should run a left rotation
+                #Now if BF of right child is 1 we should have right rotation on the right child
+                #and then left rotation on the node
+                print(self)
+                print(node, node.getBalanceFactor())
+                if node.getRight().getBalanceFactor() == 1:
 
+                    #right rotation on child
 
-    def fix_and_rotate_left(self, node):
-        if node == None:
-            return 0
-        self.updateParentsHeight(node)
-        self.fixSize(node)
-        tmp_node = node.parent
-        cnt = 0
-        while tmp_node != None:
-            if(tmp_node.getBalanceFactor() != 1 and tmp_node.getBalanceFactor() != -1):
-                if tmp_node.getBalanceFactor() == 0:
-                    break
-                if tmp_node.getBalanceFactor() == 2:
-                    self.right_rotation(tmp_node)
+                    print("rotate right than left")
+                    node.setRight(self.right_rotation(node.getRight()))
+                    # we set the right child of node to be the root of the subtree after rotation
                     cnt += 1
-                    break
-                if tmp_node.getBalanceFactor() == -2:
-                    self.right_rotation(tmp_node.right)
-                    self.left_rotation(tmp_node)
-                    cnt += 2
-                    break
-            tmp_node = tmp_node.parent
-        return cnt
+                #left rotation
+                print("rotate left")
+                self.left_rotation(node)
+                cnt += 1
+                self.fixSize(node.parent)
+                self.updateParentsHeight(node)
+                return cnt
 
+            elif node.getBalanceFactor() > 1: ## BF is 2 We should run a right rotation
+
+                # Now if BF of right child is -1 we should have left rotation on the left child
+                # and then right rotation on the node
+                print(self)
+                print(node, node.getBalanceFactor())
+                if node.getLeft().getBalanceFactor() == -1:
+                    indictor = True
+                    # left rotation on child
+                    print("rotate left than right")
+                    node.setLeft(self.left_rotation(node.getLeft()))
+                    # we set the Left child of node to be the root of the subtree after rotation
+                    cnt += 1
+                # right rotation
+                print("rotate right")
+                self.right_rotation(node)
+                cnt += 1
+                self.fixSize(node.parent)
+                self.updateParentsHeight(node)
+                return cnt
+            node = node.getParent()
+
+        return cnt
 
     # Using variables the same way as the lecture presentation. B has BF of +2 and A is its left child.
-    def right_rotation(self,node):  # Maintaining size attributes
+    def right_rotation(self,node):  # Maintaining size and height attributes
         B = node
-        A = node.left
-        Size_B = B.size
-        BOOLroot = (self.root == B)
-        C = B.parent
-        BOOLleftright = False  # if bool == True then B is the left child of its parent, else it is the right child
-        if BOOLroot == False:
-            if (C.left == B):
-                BOOLleftright = True
-        B.setLeft(A.right)
-        B.left.setParent(B)
+        A = node.getLeft()
+        isRoot = self.root == B
+        B.setLeft(A.getRight())
+        A.getRight().setParent(B)
+        C = B.getParent()
+        if not C == None:#B is not the root
+            # B is left child
+            if (C.getLeft() == B):
+                C.setLeft(A)
+            #B is right child
+            if C.getRight() == B:
+               C.setRight(A)
         A.setParent(C)
         A.setRight(B)
-        if BOOLleftright == True:
-            A.parent.setLeft(A)
-        else:  # Bool is false
-            if BOOLroot == False:
-                A.parent.setRight(A)
+        A.setSize(B.getSize())
         B.setParent(A)
-        A.size = Size_B
-        A.setSize(Size_B)
-        B.setSize(B.left.size + B.right.size + 1)
-        if BOOLroot:
+        #fix size and height
+        B.setSize(B.left.getSize() + B.right.getSize() + 1)
+        B.setHeight(max(B.left.getHeight(),B.right.getHeight()) + 1)
+        A.setHeight(max(A.left.getHeight(), A.right.getHeight()) + 1)
+        if isRoot:
             self.setRoot(A)
+        return A #The root of the rotated subtree
 
-    def left_rotation(self,node):
+    def left_rotation(self,node): # Maintaining size and height attributes
         B = node
-        A = node.right
-        Size_B = B.size
-        BOOLroot = (self.root == B)
-        C = B.parent
-        BOOLleftright = False # if bool == True then B is the right child of its parent, else it is the left child
-        if BOOLroot == False:
-            if C.right == B:
-                BOOLleftright = True
-        B.setRight(A.left)
-        B.right.setParent(B)
+        A = node.getRight()
+        isRoot = self.root == B
+        B.setRight(A.getLeft())
+        A.getLeft().setParent(B)
+        C = B.getParent()
+        if not C == None:  # B is not the root
+            # B is left child
+            if C.getLeft() == B:
+                C.setLeft(A)
+            # B is right child
+            if C.getRight() == B:
+                C.setRight(A)
         A.setParent(C)
         A.setLeft(B)
-        if BOOLleftright == True:
-            A.parent.setRight(A)
-        else:  # Bool is false
-           if BOOLroot == False:
-              A.parent.setLeft(A)
+        A.setSize(B.getSize())
         B.setParent(A)
-        A.setSize(Size_B)
-        B.setSize(B.left.size + B.right.size + 1)
-        if BOOLroot:
+        # fix size and height
+        B.setSize(B.left.getSize() + B.right.getSize() + 1)
+        B.setHeight(max(B.left.getHeight(), B.right.getHeight()) + 1)
+        A.setHeight(max(A.left.getHeight(), A.right.getHeight()) + 1)
+        if isRoot:
             self.setRoot(A)
+        print(self)
+        return A #The root of the rotated subtree
+
+
 
     def updateParentsHeight(self,node):
         parent = node.parent
