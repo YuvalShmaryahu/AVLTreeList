@@ -511,39 +511,49 @@ class AVLTreeList(object):
     """
 
     def concat(self, lst):
-        h1 = self.root.height
-        h2 = lst.root.size
+        h1 = self.getRoot().getHeight()
+        h2 = lst.getRoot().getHeight()
+        if lst.empty():
+            return h1 - h2
+        if self.empty():
+            self = lst
+            return h2 - h1
         if (h2 == h1):
-            x = lst.first()
-            lst.delete(x)
-            x.setleft(self.root)
-            x.setright(lst.root)
+            x = lst.firstNode()
+            lst.delete(0)
+            x.setLeft(self.root)
+            x.setRight(lst.root)
             return 0
         if(h2 > h1):
-            x = lst.first()
-            lst.delete(x) #we will use this x to join the 2 avl trees
-            x.setleft(self.root) # the left child of x will be the root of the self avl (a in lucture)
+            x = lst.firstNode()
+            index = 0
+            lst.delete(0) #we will use this x to join the 2 avl trees
+            x.setLeft(self.getRoot()) # the left child of x will be the root of the self avl (a in lucture)
             # finding b - the first node in lst that its height is <= self height
-            b = lst.root
-            while(b.height > h1):
-                b = b.left
-            c = b.parent
-            x.setright(b) # the right child of x will be the root of the subtree in lst that its height <= h1
-            c.setleft(x) #b's parent is now x's parent
-            self.fix_and_rotate_left(c)
+            b = lst.getRoot()
+            while(b.getHeight() > h1):
+                b = b.getLeft()
+            c = b.getParent()
+            x.setRight(b) # the right child of x will be the root of the subtree in lst that its height <= h1
+            c.setLeft(x) #b's parent is now x's parent
+            self.fix_and_rotate(c)
             return (h2 - h1)
         else: #h2 < h1
-            x = self.last()
-            self.delete(x)
-            x.setleft(lst.root)
+            x = self.lastNode()
+            index = self.length() - 1
+            self.delete(index)
+            x.setLeft(lst.root)
             # finding b - the first node in self that its height is <= lst height
-            b = self.root
-            while (b.height > h2):
-                b = b.right
-            c = b.parent
-            x.setleft(b)  # the left child of x will be the root of the subtree in self that its height <= h2
-            c.setright(x)  # b's parent is now x's parent
-            self.fix_and_rotate_right(c)
+            b = self.getRoot()
+            while (b.getHeight() > h2 + 1):
+                b = b.getRight()
+            c = b.getParent()
+            x.setLeft(b)  # the left child of x will be the root of the subtree in self that its height <= h2
+            print(self)
+            c.setRight(x)  # b's parent is now x's parent
+            print(self)
+            self.fix_and_rotate(c)
+            print(self)
             return (h1 - h2)
 
 
