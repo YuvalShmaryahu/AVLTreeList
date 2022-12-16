@@ -516,8 +516,21 @@ class AVLTreeList(object):
         if lst.empty():
             return h1 - h2
         if self.empty():
-            self = lst
+            self.makeNewTree(lst)
             return h2 - h1
+        elif self.length() == 1:
+            val = self.retrieve(0)
+            self.delete(0)
+            lst.insert(0, val)
+            self.makeNewTree(lst)
+            return h2 - h1
+        elif lst.length() == 1:
+            # Retrieve and delete in constant time
+            val = lst.retrieve(0)
+            lst.delete(0)
+            self.insert(self.length(), val)
+            return h1 - h2
+
         if (h2 == h1):
             x = lst.firstNode()
             lst.delete(0)
@@ -564,7 +577,8 @@ class AVLTreeList(object):
     @rtype: int
     @returns: the first index that contains val, -1 if not found.
     """
-
+    def makeNewTree(self, other):
+        self.setRoot(other.getRoot())
 
     def search(self, val):
         if self.empty() == True:
