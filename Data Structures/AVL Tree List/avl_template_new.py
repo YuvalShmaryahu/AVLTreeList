@@ -782,7 +782,7 @@ class AVLTreeList(object):
                 parent.setLeft(node)
             else:
                 parent.setRight(node)
-        node.setSize(len(lst))
+        node.setSize(last-first+1)
         node.setLeft(self.getVirtualNode())
         node.setRight(self.getVirtualNode())
         if (len(lst)==2):
