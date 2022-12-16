@@ -4,7 +4,8 @@
 # id2      - complete info
 # name2    - complete info
 import printree
-import random
+from random import randint
+
 """A class represnting a node in an AVL tree"""
 
 
@@ -159,9 +160,9 @@ class AVLNode(object):
     def getPredecessor(self):
         if self.left.value is not None:
             return self.left.max()
-        node = self
-        y = node.parent
-        while (y is not None and x == y.left):
+        x = self
+        y = x.getParent()
+        while (y is not None and x == y.getLeft()):
             x = y
             y = x.parent
         return y
@@ -169,9 +170,9 @@ class AVLNode(object):
     def getSuccessor(self):
         if self.right.value is not None:
             return self.right.min()
-        node = self
-        y = node.parent
-        while (y is not None and x == y.right):
+        x = self
+        y = x.getParent()
+        while (y is not None and x == y.getRight()):
             x = y
             y = x.parent
         return y
@@ -391,7 +392,6 @@ class AVLTreeList(object):
                     self.right_rotation(a.getRight())
                     self.left_rotation(a)
             a = c
-        print(self)
         return cntRotations
 
 
@@ -446,8 +446,9 @@ class AVLTreeList(object):
     """
 
     def listToArray(self):
+        if self.root.getSize() == 0:
+            return []
         array = [0] * self.root.size
-
         node = self.root.min()
         for i in range(self.root.size):
             array[i] = node.value
@@ -471,8 +472,11 @@ class AVLTreeList(object):
 
     def sort(self):
         tree = AVLTreeList()
-        array = self.listToArray()
-        for i in range (self.root.size):
+        if self.root.getSize() == 0:
+            return tree
+        array1 = self.listToArray()
+        array = self.mergesort(array1)
+        for i in range (self.root.getSize()):
             tree.insert(i,array[i])
         return tree
 
@@ -483,11 +487,19 @@ class AVLTreeList(object):
     """
 
     def permutation(self):
+        if self.root.getSize() == 0:
+            return self
         tree = AVLTreeList()
         array = self.listToArray()
-        random.shuffle(array)
-        for i in range(self.root.size):
-            tree.insert(i, array[i])
+        self.randomize(array,len(array))
+        node = AVLNode(array[len(array)//2])
+        tree.setRoot(node)
+        node.setLeft(self.getVirtualNode())
+        node.setRight(self.getVirtualNode())
+        node.setParent(None)
+        node.setSize(len(array))
+        h = self.createtreeinlineartime(array,True,node,0,len(array)//2-1) and self.createtreeinlineartime(array,False,node,len(array)//2 +1,len(array)-1)
+        self.height_fixer(tree)
         return tree
 
     """concatenates lst to self
@@ -709,5 +721,67 @@ class AVLTreeList(object):
     def setRoot(self,node):
         self.root = node
 
+    def merge(self,A, B):
+        """ merging two lists into a sorted list
+            A and B must be sorted! """
+        n = len(A)
+        m = len(B)
+        C = [None for i in range(n + m)]
+        a = 0;
+        b = 0;
+        c = 0
+        while a < n and b < m:  # more element in both A and B
+            if A[a] < B[b]:
+                C[c] = A[a]
+                a += 1
+            else:
+                C[c] = B[b]
+                b += 1
+            c += 1
+        C[c:] = A[a:] + B[b:]  # append remaining elements (one of those is empty)
+        return C
 
+    def mergesort(self,lst):
+        """ recursive mergesort """
+        n = len(lst)
+        if n <= 1:
+            return lst
+        else:  # two recursive calls, then merge
+            return self.merge(self.mergesort(lst[0:n // 2]),self.mergesort(lst[n // 2:n]))
 
+    def createtreeinlineartime(self,lst,bool,parent,first,last):
+        index = (last-first +1)//2
+        node = AVLNode(lst[index])
+        node.setParent(parent)
+        if parent!= None:
+            if bool == True:
+                parent.setLeft(node)
+            else:
+                parent.setRight(node)
+        node.setSize(len(lst))
+        node.setLeft(self.getVirtualNode())
+        node.setRight(self.getVirtualNode())
+        if (len(lst)==2):
+            new_node =AVLNode(lst[0])
+            new_node.setLeft(self.getVirtualNode())
+            new_node.setRight(self.getVirtualNode())
+            new_node.setParent(node)
+            new_node.setSize(1)
+            node.setLeft(new_node)
+            return None
+        if (len(lst) == 1):
+            return None
+        return self.createtreeinlineartime(lst,node,True,first,index-1) and self.createtreeinlineartime(lst,node,False,index+1,last)
+
+    def height_fixer(self,tree):
+        node = tree.firstNode()
+        for i in range(self.root.size):
+            node.setHeight(max(node.getLeft().getHeight(),node.getRight().getHeight())+1)
+            node = node.getSuccessor()
+        return None
+
+    def randomize(self,arr, n):
+        for i in range(n - 1, 0, -1):
+            j = randint(0, i + 1)
+            arr[i], arr[j] = arr[j], arr[i]
+        return arr
