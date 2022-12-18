@@ -188,19 +188,6 @@ class AVLNode(object):
         return self.left.getHeight() - self.right.getHeight()
 
 
-    # Updating the height of a node
-    def setRealHeight(self):
-        if (self.right.value == None):
-            self.height = self.left.height + 1
-            return self.height
-        if (self.left.value == None):
-            self.height = self.right.height + 1
-            return self.height
-        else:
-            self.height = 1 + max(self.left.height, self.right.height)
-            return self.height
-
-
 """
 A class implementing the ADT list, using an AVL tree.
 """
@@ -511,6 +498,7 @@ class AVLTreeList(object):
     """
 
     def concat(self, lst):
+        HasLeftChild = False
         h1 = self.getRoot().getHeight()
         h2 = lst.getRoot().getHeight()
         diff_h = abs(h1 - h2)
@@ -538,30 +526,72 @@ class AVLTreeList(object):
         else:
             #find self last node and make it the join x
             x = self.lastNode()
-            lst.delete(self.length() - 1)
+            if x.getLeft().isRealNode():
+                HasLeftChild = True
+                print ("ok")
+                indexmin = self.length() - 2
+                val = x.getLeft().getValue()
+                self.delete(self.length() - 2)
+                self.delete(self.length() - 2)
+            else:
+                self.delete(self.length() - 1)
             self.join(lst, x)
+            self.height_for_concat()
+            a = x
+            while a != None:
+                c = a.getParent()
+                a.setHeight(max(a.left.getHeight(), a.right.getHeight()) + 1)
+                bf = a.getBalanceFactor()
+                if (bf == 1 or bf == -1) and a.getParent() == None:
+                    return diff_h
+                if bf == 2:
+                    c = a.getParent()
+                    if a.getLeft().getBalanceFactor() == 1 or a.getLeft().getBalanceFactor() == 0:
+                        self.right_rotation(a)
+                    else:
+                        self.left_rotation(a.getLeft())
+                        self.right_rotation(a)
+                elif bf == -2:  # bf = -2
+                    if a.getRight().getBalanceFactor() == -1 or a.getRight().getBalanceFactor() == 0:
+                        self.left_rotation(a)
+                    else:
+                        self.right_rotation(a.getRight())
+                        self.left_rotation(a)
+                a = c
+            self.height_for_concat()
+          #  print (self)
+            if HasLeftChild:
+                self.insert(indexmin,val)
+                print ("val is " , val , " and its index is " , indexmin)
             return diff_h
 
     def join(self, other, x):
         h1 = self.getTreeRoot().getHeight()
         h2 = other.getTreeRoot().getHeight()
-
         if h1 <= h2:
             a = self.getRoot()
             x.setLeft(a) #set self root to be the left child of x
-            self.getRoot().setParent(x)
-            new_root = self.joinRight(other.getRoot(), x, h1)
+            a.setParent(x)
+            self.joinRight(other.getRoot(), x, h1)
+            parent = x
+            while (parent.getParent() is not None):
+                parent = parent.getParent()
+            new_root = parent
             self.setRoot(new_root)
 
         elif h1 > h2:
             a = other.getRoot()
-            a.setParent(x)
             x.setRight(a)
-            new_root = self.joinLeft(self.getRoot(), x, h2)
+            a.setParent(x)
+            self.joinLeft(self.getRoot(), x, h2)
+            parent = x
+            while (parent.getParent() is not None):
+                parent = parent.getParent()
+            new_root = parent
             self.setRoot(new_root)
 
     def joinRight(self,b,x,h):
-        while (b.getHeight() + 1 > h):
+        while (b.getHeight() +1 > h):
             b = b.getLeft()
         c = b.getParent()
         x.setRight(b)  # the right child of x will be the root of the subtree in lst that its height <= h1
@@ -574,11 +604,11 @@ class AVLTreeList(object):
         self.fix_and_rotate(x)
 
     def joinLeft(self,b,x,h):
-        while (b.getHeight() + 1 > h):
+        while (b.getHeight() +1 > h):
             b = b.getRight()
         c = b.getParent()
         x.setLeft(b)  # the left child of x will be the root of the subtree in lst that its height <= h1
-        b.setPrent(x)
+        b.setParent(x)
         if c is not None:
             x.setParent(c)
             c.setRight(x)  # b's parent is now x's parent
@@ -762,6 +792,7 @@ class AVLTreeList(object):
 
     def setRoot(self,node):
         self.root = node
+        node.setParent(None)
 
     def merge(self,A, B):
         """ merging two lists into a sorted list
@@ -827,3 +858,11 @@ class AVLTreeList(object):
             j = randint(0, i + 1)
             arr[i], arr[j] = arr[j], arr[i]
         return arr
+
+    def height_for_concat(self):
+        node = self.lastNode()
+        while node is not None :
+            node.setSize(node.getLeft().getSize() + node.getRight().getSize() +1 )
+            node.setHeight(max(node.getLeft().getHeight(),node.getRight().getHeight())+1)
+            node = node.getParent()
+
