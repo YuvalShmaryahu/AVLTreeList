@@ -1,8 +1,8 @@
 # username - complete info
-# id1      - complete info
-# name1    - complete info
-# id2      - complete info
-# name2    - complete info
+# id1      - 208581702
+# name1    - Yuval Shmaryahu
+# id2      - 209058510
+# name2    - Hadas Sayar
 import printree
 from random import randint
 
@@ -221,7 +221,7 @@ class AVLTreeList(object):
         return self.getRoot().getHeight()
 
     def append(self, val):
-        self.insert(self.length(), val)
+        return self.insert(self.length(), val)
 
     def __init__(self):
         self.root = self.virtual
@@ -289,7 +289,10 @@ class AVLTreeList(object):
         return self.root
     #O(1)
     def getVirtualNode(self):
-        return self.virtual
+        virtual = AVLNode(None)
+        virtual.setSize(0)
+        virtual.setHeight(-1)
+        return virtual
 
     def retrieve(self, i):
         if self.getRoot() == None:
@@ -317,12 +320,16 @@ class AVLTreeList(object):
             self.root = AVLNode(val)
             self.root.setSize(1)
             self.root.setHeight(0)
-            self.root.setLeft(self.getVirtualNode())
-            self.root.setRight(self.getVirtualNode())
+            virt = self.getVirtualNode()
+            self.root.setLeft(virt)
+            self.root.setRight(virt)
+            virt.setParent(self.getRoot())
             return 0
         z = AVLNode(val)
-        z.setLeft(self.getVirtualNode())
-        z.setRight(self.getVirtualNode())
+        virtual = self.getVirtualNode()
+        z.setLeft(virtual)
+        z.setRight(virtual)
+        virtual.setParent(z)
         if i == self.length():
             x = self.lastNode()
             x.setRight(z)
@@ -330,6 +337,7 @@ class AVLTreeList(object):
         else: # i < len(lst)
             x = self.select(i+1)
             if x.left.isRealNode() == False:
+               # x.getLeft().setParent(z)
                 x.setLeft(z)
                 z.setParent(x)
             else: #x has left child
@@ -361,26 +369,35 @@ class AVLTreeList(object):
         #Deleting like BST tree
         if x.left.isRealNode() == False and x.right.isRealNode() == False: #x has no children (only virtual)
             if self.getRoot() == x:
-                self.setRoot(self.getVirtualNode())
+                virtroot = self.getVirtualNode()
+                self.setRoot(virtroot)
                 return 0
             a = x.getParent()
             if a.getRight() == x:
-                a.setRight(self.getVirtualNode())
+                virt = self.getVirtualNode()
+                a.setRight(virt)
+                virt.setParent(a)
                 self.fixSizeDelete(a)
                 self.updateParentsHeightDelete(a)
             else:
-                a.setLeft(self.getVirtualNode())
+                virt = self.getVirtualNode()
+                a.setLeft(virt)
+                virt.setParent(a)
                 self.fixSizeDelete(a)
                 self.updateParentsHeightDelete(a)
         elif x.left.isRealNode() and x.right.isRealNode() == False: # x has only left child
             x.setValue(x.getLeft().getValue())
-            x.setLeft(self.getVirtualNode())
+            virt = self.getVirtualNode()
+            x.setLeft(virt)
+            virt.setParent(x)
             self.fixSizeDelete(x)
             self.updateParentsHeightDelete(x)
             a=x
         elif x.right.isRealNode() and x.left.isRealNode() == False: #x has only right child
             x.setValue(x.right.value)
-            x.setRight(self.getVirtualNode())
+            virt = self.getVirtualNode()
+            x.setRight(virt)
+            virt.setParent(x)
             self.fixSizeDelete(x)
             self.updateParentsHeightDelete(x)
             a=x
@@ -390,15 +407,21 @@ class AVLTreeList(object):
             x.setValue(y.getValue())
             if y.right.isRealNode():
                 y.setValue(y.getRight().getValue())
-                y.setRight(self.getVirtualNode())
+                virt = self.getVirtualNode()
+                y.setRight(virt)
+                virt.setParent(y)
                 self.fixSizeDelete(y)
                 self.updateParentsHeightDelete(y)
                 a=y
             else:
                 if (y.getParent().getLeft() == y):
-                    y.getParent().setLeft(self.getVirtualNode())
+                    virt = self.getVirtualNode()
+                    y.getParent().setLeft(virt)
+                    virt.setParent(y.getParent())
                 else:
-                    y.getParent().setRight(self.getVirtualNode())
+                    virt = self.getVirtualNode()
+                    y.getParent().setRight(virt)
+                    virt.setParent(y.getParent())
                 self.fixSizeDelete(p)
                 self.updateParentsHeightDelete(p)
                 a=p
@@ -740,12 +763,10 @@ class AVLTreeList(object):
                     node.setRight(self.right_rotation(node.getRight()))
                     # we set the right child of node to be the root of the subtree after rotation
                     cnt += 1
-                    self.counter += 1
                 #left rotation
                 #print("rotate left")
                 self.left_rotation(node)
                 cnt += 1
-                self.counter +=1
                 self.fixSize(node.parent)
                 self.updateParentsHeight(node)
                 return cnt
@@ -891,12 +912,15 @@ class AVLTreeList(object):
             else:
                 parent.setRight(node)
         node.setSize(last-first+1)
-        node.setLeft(self.getVirtualNode())
-        node.setRight(self.getVirtualNode())
+        virtroot = self.getVirtualNode()
+        node.setLeft(virtroot)
+        node.setRight(virtroot)
         if (len(lst)==2):
             new_node =AVLNode(lst[0])
-            new_node.setLeft(self.getVirtualNode())
-            new_node.setRight(self.getVirtualNode())
+            virt = self.getVirtualNode()
+            new_node.setLeft(virt)
+            new_node.setRight(virt)
+            virt.setParent(new_node)
             new_node.setParent(node)
             new_node.setSize(1)
             node.setLeft(new_node)
@@ -923,58 +947,3 @@ class AVLTreeList(object):
             node.setHeight(max(node.getLeft().getHeight(),node.getRight().getHeight()) +1)
             node.setSize(node.getLeft().getSize() + node.getRight().getSize() +1)
             node = node.getParent()
-
-
-class Array(object):
-    crray = [None] * 5
-    length = 0
-
-    def insert(self,i, node1):
-        node = AVLNode(node1)
-        if i == self.length:
-            self.crray[i] = node
-        else:
-            if self.crray[0] is None:
-                self.crray[0] = node
-                self.length+=1
-                return None
-            c = self.length
-            while c > i:
-                self.crray[c] = self.crray[c - 1]
-                c -= 1
-            self.crray[i] = node
-        self.length += 1
-        if self.crray[len(self.crray) - 1] != None:
-            new_array = [None] * (len(self.crray) * 2)
-            for j in range(len(self.crray)):
-                new_array[j] = self.crray[j]
-            self.crray = new_array
-
-
-class LinkedList(object):
-    first = None
-    last = None
-    length = 0
-
-    def insert(self,i, node1):
-        node = AVLNode(node1)
-        if self.first is None:
-            self.first = node
-            self.last = node
-            self.length = 1
-        else:
-            if i == 0:
-                node.setParent(self.first)
-                self.first = node
-                self.length += 1
-            elif i == self.length:
-                self.last.setParent(node)
-                self.last = node
-                self.length += 1
-            else:
-                it_node = self.first
-                for j in range(i - 1):
-                    it_node = it_node.getParent()
-                node.setParent(it_node.getParent())
-                it_node.setParent(node)
-                self.length += 1
