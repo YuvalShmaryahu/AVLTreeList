@@ -26,7 +26,7 @@ class AVLNode(object):
 
     def __repr__(self):
         if self.isRealNode():
-            return self.value
+            return str(self.value)
         else:
             return "virt"
 
@@ -34,8 +34,11 @@ class AVLNode(object):
     @rtype: AVLNode
     @returns: the left child of self, None if there is no left child
     """
-    #O(1)
+
+
     def getLeft(self):
+        if self.left.isRealNode():
+            return self.left
         return self.left
 
     """returns the right child
@@ -44,9 +47,12 @@ class AVLNode(object):
     @returns: the right child of self, None if there is no right child
     """
 
-    #O(1)
     def getRight(self):
+        if self.right.isRealNode():
+            return self.right
         return self.right
+
+
 
     """returns the parent 
 
@@ -64,7 +70,9 @@ class AVLNode(object):
     """
     #O(1)
     def getValue(self):
-        return self.value
+        if self.isRealNode():
+            return self.value
+        return None
 
     """returns the height
 
@@ -75,6 +83,7 @@ class AVLNode(object):
     def getHeight(self):
         return self.height
 
+
     """sets left child
 
     @type node: AVLNode
@@ -84,6 +93,7 @@ class AVLNode(object):
     # 0(1)
     def setLeft(self, node):
         self.left = node
+        return None
 
 
 
@@ -97,6 +107,7 @@ class AVLNode(object):
     # 0(1)
     def setRight(self, node):
         self.right = node
+        return None
 
 
     """sets parent
@@ -108,6 +119,7 @@ class AVLNode(object):
     # 0(1)
     def setParent(self, node):
         self.parent = node
+        return None
 
     """sets value
 
@@ -118,6 +130,7 @@ class AVLNode(object):
     # 0(1)
     def setValue(self, value):
         self.value = value
+        return None
 
     """sets the balance factor of the node
 
@@ -128,6 +141,7 @@ class AVLNode(object):
     # 0(1)
     def setHeight(self, h):
         self.height = h
+        return None
 
     """Sets the size of a node in O(1)
             @type size: int
@@ -136,6 +150,7 @@ class AVLNode(object):
     # 0(1)
     def setSize(self, size):
         self.size = size
+        return None
 
     # 0(1)
     def getSize(self):
@@ -202,9 +217,17 @@ class AVLTreeList(object):
     virtual.setSize(0)
     virtual.setHeight(-1)
 
+    def getTreeHeight(self):
+        return self.getRoot().getHeight()
+
+    def append(self, val):
+        self.insert(self.length(), val)
+
     def __init__(self):
         self.root = self.virtual
         self.counter = 0
+        self.firstItem = None
+        self.lastItem = None
 
     def __repr__(self):
         """Representation of the tree
@@ -222,6 +245,10 @@ class AVLTreeList(object):
     ##return a node by its rank
     # O(logN)
     def select(self, i):
+        if self.empty():
+            return None
+        if i > self.getRoot().getSize():  # check if the rank exist
+            return None
         return self.Tree_select_rec(self.root, i)
 
     # O(logN)
@@ -240,7 +267,10 @@ class AVLTreeList(object):
     """
     #O(1)
     def empty(self):
-        return self.getRoot().isRealNode() == False
+        if self.getRoot() == None:
+            return True
+        return False
+
 
     """retrieves the value of the i'th item in the list
 
@@ -259,10 +289,15 @@ class AVLTreeList(object):
         return self.root
     #O(1)
     def getVirtualNode(self):
-
         return self.virtual
 
     def retrieve(self, i):
+        if self.getRoot() == None:
+            return None
+        if i < 0 :
+            return None
+        if i > self.getRoot().getSize() - 1:
+            return None
         val = self.select(i + 1).value
         return val
 
@@ -316,6 +351,12 @@ class AVLTreeList(object):
     """
 
     def delete(self, i):
+        if self.getRoot() == None:
+            return -1
+        if i > self.length() - 1:
+            return -1
+        if i <0:
+            return -1
         x = self.select(i+1)
         #Deleting like BST tree
         if x.left.isRealNode() == False and x.right.isRealNode() == False: #x has no children (only virtual)
@@ -391,6 +432,8 @@ class AVLTreeList(object):
                     self.right_rotation(a.getRight())
                     self.left_rotation(a)
             a = c
+        self.firstItem = self.firstNode()
+        self.lastItem = self.lastNode()
         return cntRotations
 
 
@@ -514,9 +557,9 @@ class AVLTreeList(object):
             return 0
         if self.empty():
             self.setRoot(lst.getRoot())
-            return lst.getRoot().getHeight() +1
+            return lst.getRoot().getHeight() + 1
         if lst.empty():
-            return self.getRoot().getHeight() +1
+            return self.getRoot().getHeight() + 1
         a = self.getRoot()
         size1 = a.getSize()
         h1 = a.getHeight()
@@ -537,6 +580,8 @@ class AVLTreeList(object):
             x.setSize(x.getLeft().getSize() + x.getRight().getSize() + 1)
             self.setRoot(x)
         self.delete(size1)
+        self.firstItem = self.firstNode()
+        self.lastItem = self.lastNode()
         return abs(h1-h2)
 
 
@@ -656,10 +701,9 @@ class AVLTreeList(object):
     @rtype: AVLNode
     @returns: the root, None if the list is empty
     """
-
-
-
     def getRoot(self):
+        if self.root.getSize() == 0:
+            return None
         return self.root
 
     def fixSize(self,node):
@@ -674,6 +718,7 @@ class AVLTreeList(object):
             prv_size = tmp_node.getSize()
             tmp_node.setSize(prv_size-1)
             tmp_node = tmp_node.getParent()
+
     def fix_and_rotate(self, node):
         if node == None:
             return 0
@@ -728,7 +773,8 @@ class AVLTreeList(object):
                 self.updateParentsHeight(node)
                 return cnt
             node = node.getParent()
-
+        self.firstItem = self.firstNode()
+        self.lastItem = self.lastNode()
         return cnt
 
     # Using variables the same way as the lecture presentation. B has BF of +2 and A is its left child.
@@ -862,7 +908,7 @@ class AVLTreeList(object):
     def height_fixer(self,tree):
         node = tree.firstNode()
         for i in range(self.root.size):
-            node.setHeight(max(node.getLeft().getHeight(),node.getRight().getHeight())+1)
+            node.setHeight(max(node.getLeft().getHeight(), node.getRight().getHeight()) + 1)
             node = node.getSuccessor()
         return None
 
@@ -878,3 +924,57 @@ class AVLTreeList(object):
             node.setSize(node.getLeft().getSize() + node.getRight().getSize() +1)
             node = node.getParent()
 
+
+class Array(object):
+    crray = [None] * 5
+    length = 0
+
+    def insert(self,i, node1):
+        node = AVLNode(node1)
+        if i == self.length:
+            self.crray[i] = node
+        else:
+            if self.crray[0] is None:
+                self.crray[0] = node
+                self.length+=1
+                return None
+            c = self.length
+            while c > i:
+                self.crray[c] = self.crray[c - 1]
+                c -= 1
+            self.crray[i] = node
+        self.length += 1
+        if self.crray[len(self.crray) - 1] != None:
+            new_array = [None] * (len(self.crray) * 2)
+            for j in range(len(self.crray)):
+                new_array[j] = self.crray[j]
+            self.crray = new_array
+
+
+class LinkedList(object):
+    first = None
+    last = None
+    length = 0
+
+    def insert(self,i, node1):
+        node = AVLNode(node1)
+        if self.first is None:
+            self.first = node
+            self.last = node
+            self.length = 1
+        else:
+            if i == 0:
+                node.setParent(self.first)
+                self.first = node
+                self.length += 1
+            elif i == self.length:
+                self.last.setParent(node)
+                self.last = node
+                self.length += 1
+            else:
+                it_node = self.first
+                for j in range(i - 1):
+                    it_node = it_node.getParent()
+                node.setParent(it_node.getParent())
+                it_node.setParent(node)
+                self.length += 1
