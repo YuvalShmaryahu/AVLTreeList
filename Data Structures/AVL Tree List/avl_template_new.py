@@ -568,26 +568,6 @@ class AVLTreeList(object):
             tree.insert(i,array[i])
         return tree
 
-    def permutation(self):
-        """
-        permute the info values of the list in O(n)
-        @rtype: list
-        @returns: an AVLTreeList where the values are permuted randomly by the info of the original list. ##Use Randomness
-        """
-        if self.root.getSize() == 0:
-            return self
-        tree = AVLTreeList()
-        array = self.listToArray()
-        self.randomize(array,len(array))
-        node = AVLNode(array[len(array)//2])
-        tree.setRoot(node)
-        node.setLeft(self.getVirtualNode())
-        node.setRight(self.getVirtualNode())
-        node.setParent(None)
-        node.setSize(len(array))
-        h = self.createtreeinlineartime(array,True,node,0,len(array)//2-1) and self.createtreeinlineartime(array,False,node,len(array)//2 +1,len(array)-1)
-        self.height_fixer(tree)
-        return tree
 
     def concat(self, lst):
         """
@@ -995,12 +975,38 @@ class AVLTreeList(object):
         else:  # two recursive calls, then merge
             return self.merge(self.mergesort(lst[0:n // 2]),self.mergesort(lst[n // 2:n]))
 
+    def permutation(self):
+        """
+        permute the info values of the list in O(n)
+        @rtype: list
+        @returns: an AVLTreeList where the values are permuted randomly by the info of the original list. ##Use Randomness
+        """
+        if self.root.getSize() == 0:
+            return self
+        if self.root.getSize() == 1:
+            return self
+        tree = AVLTreeList()
+        array = self.listToArray()
+        self.randomize(array, len(array))
+        node = AVLNode(array[len(array) // 2])
+        tree.setRoot(node)
+        node.setLeft(self.getVirtualNode())
+        node.setRight(self.getVirtualNode())
+        node.setParent(None)
+        node.setSize(len(array))
+        h = self.createtreeinlineartime(array, True, node, 0, len(array) // 2 - 1) + self.createtreeinlineartime(
+            array, False, node, len(array) // 2 + 1, len(array) - 1)
+        self.height_fixer(tree)
+        return tree
+
     def createtreeinlineartime(self,lst,bool,parent,first,last):
         """
         algorithm to create a tree in O(n) (like we sow on sorted array in recitation)
         @rtype node: AVLTreeList
         """
-        index = (last-first +1)//2
+        index = (last+first +1)//2
+        if last <first:
+            return 0
         node = AVLNode(lst[index])
         node.setParent(parent)
         if parent!= None:
@@ -1012,8 +1018,8 @@ class AVLTreeList(object):
         virtroot = self.getVirtualNode()
         node.setLeft(virtroot)
         node.setRight(virtroot)
-        if (len(lst)==2):
-            new_node =AVLNode(lst[0])
+        if (last-first +1 ==2):
+            new_node =AVLNode(lst[first])
             virt = self.getVirtualNode()
             new_node.setLeft(virt)
             new_node.setRight(virt)
@@ -1021,21 +1027,21 @@ class AVLTreeList(object):
             new_node.setParent(node)
             new_node.setSize(1)
             node.setLeft(new_node)
-            return None
-        if (len(lst) == 1):
-            return None
-        return self.createtreeinlineartime(lst,node,True,first,index-1) and self.createtreeinlineartime(lst,node,False,index+1,last)
+            return 1
+        if (last-first +1 ==1):
+            return 1
+        return self.createtreeinlineartime(lst,True,node,first,index-1) + self.createtreeinlineartime(lst,False,node,index+1,last)
 
     def height_fixer(self,tree):
         node = tree.firstNode()
-        for i in range(self.root.size):
+        for i in range(self.root.size - 1):
             node.setHeight(max(node.getLeft().getHeight(), node.getRight().getHeight()) + 1)
             node = node.getSuccessor()
         return None
 
     def randomize(self,arr, n):
         for i in range(n - 1, 0, -1):
-            j = randint(0, i + 1)
+            j = randint(0, i )
             arr[i], arr[j] = arr[j], arr[i]
         return arr
 
