@@ -1033,19 +1033,30 @@ class AVLTreeList(object):
         return self.createtreeinlineartime(lst,True,node,first,index-1) + self.createtreeinlineartime(lst,False,node,index+1,last)
 
     def height_fixer(self,tree):
+        """
+        going to “leftist” node in the tree and update all of it’s parent heights in O(logn)
+        """
         node = tree.firstNode()
-        for i in range(self.root.size - 1):
+        for i in range(self.root.size):
             node.setHeight(max(node.getLeft().getHeight(), node.getRight().getHeight()) + 1)
             node = node.getSuccessor()
         return None
 
     def randomize(self,arr, n):
+        """
+        function that returns a randomized array using Fisher Yates algorithm in O(n)
+        @rtype: List
+        @return: randomized array
+        """
         for i in range(n - 1, 0, -1):
-            j = randint(0, i )
+            j = randint(0, i + 1)
             arr[i], arr[j] = arr[j], arr[i]
         return arr
 
     def balanceheightandsize(self,node):
+        """
+        balance height and size of node and all of its parent in O(logn)
+        """
         while node != None:
             node.setHeight(max(node.getLeft().getHeight(),node.getRight().getHeight()) +1)
             node.setSize(node.getLeft().getSize() + node.getRight().getSize() +1)
